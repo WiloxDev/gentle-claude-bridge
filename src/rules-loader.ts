@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, normalize } from "node:path";
 import type { ClaudeRuleItem } from "./types.js";
 
 /**
@@ -7,14 +7,16 @@ import type { ClaudeRuleItem } from "./types.js";
  * 1. .claude/rules/*.md
  * 2. AGENTS.override.md o AGENTS.md
  * 3. CLAUDE.md
+ * 
+ * Totalmente agnóstico de plataforma (Linux, macOS, Windows).
+ * En Windows, el bucle ascendente se detiene en la raíz del disco (ej: 'C:\')
+ * en lugar de intentar comparar rígidamente con '/'.
  */
 export function loadProjectRules(startDir: string = process.cwd()): ClaudeRuleItem[] {
   const rules: ClaudeRuleItem[] = [];
-  let currentDir = resolve(startDir);
-  const rootDir = resolve("/");
+  let currentDir = normalize(resolve(startDir));
 
-  // Buscar hacia arriba hasta la raíz del sistema
-  while (currentDir !== rootDir) {
+  while (true) {
     // 1. Buscar .claude/rules/
     const claudeRulesDir = join(currentDir, ".claude", "rules");
     if (existsSync(claudeRulesDir)) {
@@ -53,7 +55,7 @@ export function loadProjectRules(startDir: string = process.cwd()): ClaudeRuleIt
               path: p,
               content
             });
-            break; // AGENTS.override.md tiene prioridad sobre AGENTS.md
+            break; // AGENTS.override.md tiene prioridad
           }
         } catch {
           // Ignorar
@@ -78,12 +80,17 @@ export function loadProjectRules(startDir: string = process.cwd()): ClaudeRuleIt
       }
     }
 
-    // Si ya encontramos reglas en este directorio de proyecto, no seguimos subiendo
+    // Si encontramos reglas en el nivel actual, nos detenemos
     if (rules.length > 0) {
       break;
     }
 
-    currentDir = resolve(currentDir, "..");
+    const parentDir = normalize(resolve(currentDir, ".."));
+    // Detener si llegamos a la raíz del sistema de archivos (POSIX '/' o Windows 'C:\')
+    if (parentDir === currentDir) {
+      break;
+    }
+    currentDir = parentDir;
   }
 
   return rules;
