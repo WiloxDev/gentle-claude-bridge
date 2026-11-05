@@ -1,6 +1,6 @@
 {
   "name": "gentle-claude-bridge",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Gentle Shell and Pi provider bridge that runs Claude Code (via Agent SDK) with native usage bar metrics, /claude doctor, and local rules support.",
   "type": "module",
   "main": "./src/index.ts",

@@ -6,6 +6,7 @@ import { runDoctorDiagnosis, formatDoctorReport } from "./doctor.js";
 import { loadQuotaMetrics, getGentleShellUsageModel } from "./quota-tracker.js";
 import { terminateAllActiveSessions } from "./session-lifecycle.js";
 import { loadProjectRules } from "./rules-loader.js";
+import { checkClaudeUpdates } from "./updater.js";
 
 export default function activate(api: ExtensionAPI): void {
   // 1. Registro del proveedor en Pi / Gentle Shell
@@ -47,7 +48,32 @@ export default function activate(api: ExtensionAPI): void {
         return;
       }
 
-      ctx.ui?.notify("Uso: /claude doctor | /claude quota | /claude rules", "info");
+      if (sub === "update" || sub === "upgrade") {
+        ctx.ui?.notify("🔍 Comprobando actualizaciones de Claude Code y Bridge...", "info");
+        try {
+          const status = await checkClaudeUpdates("1.0.2");
+          const lines: string[] = [];
+          lines.push("📦 ESTADO DE ACTUALIZACIONES:");
+          lines.push(`• Claude Code CLI: ${status.installedClaudeVersion || "no detectado"} ➔ Última oficial ${status.latestClaudeNpmVersion || "indisponible"}`);
+          lines.push(`• Bridge Extensión: Versión 1.0.2 ${status.bridgeUpdateAvailable ? `(Disponible v${status.latestBridgeVersion})` : "(Al día)"}`);
+          ctx.ui?.notify(lines.join("\n"), "info");
+
+          if (status.claudeUpdateAvailable) {
+            ctx.ui?.notify(
+              `💡 Para actualizar Claude Code sin perder tu sesión OAuth, ejecuta:\n` +
+              `npm install -g @anthropic-ai/claude-code@latest`,
+              "info"
+            );
+          } else {
+            ctx.ui?.notify("✓ Claude Code CLI está en su versión más reciente.", "info");
+          }
+        } catch (err: any) {
+          ctx.ui?.notify(`✗ Error al comprobar actualizaciones: ${err?.message || err}`, "error");
+        }
+        return;
+      }
+
+      ctx.ui?.notify("Uso: /claude doctor | /claude quota | /claude rules | /claude update", "info");
     }
   });
 
