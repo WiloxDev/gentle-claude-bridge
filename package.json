@@ -1,0 +1,55 @@
+{
+  "name": "gentle-claude-bridge",
+  "version": "1.0.0",
+  "description": "Gentle Shell and Pi provider bridge that runs Claude Code (via Agent SDK) with native usage bar metrics, /claude doctor, and local rules support.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "gentle-shell-package",
+    "gentle-shell-extension",
+    "gentle-hub-project",
+    "claude-code",
+    "claude-agent-sdk",
+    "ai"
+  ],
+  "author": "Wilox",
+  "license": "MIT",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ],
+    "image": "https://raw.githubusercontent.com/WiloxDev/gentle-claude-bridge/main/assets/logo.png"
+  },
+  "files": [
+    "src",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.308",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cc-session-io": "^0.4.1"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.86.0",
+    "@earendil-works/pi-coding-agent": ">=0.86.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^1.4.0",
+    "@earendil-works/pi-coding-agent": "^1.4.0",
+    "@earendil-works/pi-tui": "^1.4.0",
+    "@types/node": "^24.3.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
