@@ -1,5 +1,6 @@
 export const PROVIDER_ID = "gentle-claude";
 export const PROVIDER_LABEL = "Gentle Claude Bridge";
+export const PROVIDER_API = "anthropic-messages";
 
 export type EffortLevel = "low" | "medium" | "high" | "max" | "none";
 

@@ -1,5 +1,5 @@
 import type { Model } from "@earendil-works/pi-ai";
-import { PROVIDER_ID } from "./types.js";
+import { PROVIDER_ID, PROVIDER_API } from "./types.js";
 
 const ZERO_COST = {
   input: 0,
@@ -13,7 +13,7 @@ export const CLAUDE_MODELS: Model<any>[] = [
     id: "claude-opus-5",
     name: "Claude Opus 5.5",
     provider: PROVIDER_ID,
-    api: "anthropic-messages",
+    api: PROVIDER_API,
     baseUrl: "https://api.anthropic.com",
     cost: ZERO_COST,
     contextWindow: 1_000_000,
@@ -25,7 +25,7 @@ export const CLAUDE_MODELS: Model<any>[] = [
     id: "claude-sonnet-5-5",
     name: "Claude Sonnet 5.5",
     provider: PROVIDER_ID,
-    api: "anthropic-messages",
+    api: PROVIDER_API,
     baseUrl: "https://api.anthropic.com",
     cost: ZERO_COST,
     contextWindow: 1_000_000,
@@ -37,7 +37,7 @@ export const CLAUDE_MODELS: Model<any>[] = [
     id: "claude-haiku-4-5",
     name: "Claude Haiku 4.5",
     provider: PROVIDER_ID,
-    api: "anthropic-messages",
+    api: PROVIDER_API,
     baseUrl: "https://api.anthropic.com",
     cost: ZERO_COST,
     contextWindow: 200_000,

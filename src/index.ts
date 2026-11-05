@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { PROVIDER_ID, PROVIDER_LABEL } from "./types.js";
+import { PROVIDER_ID, PROVIDER_LABEL, PROVIDER_API } from "./types.js";
 import { CLAUDE_MODELS } from "./models.js";
 import { createClaudeStream } from "./provider.js";
 import { runDoctorDiagnosis, formatDoctorReport } from "./doctor.js";
@@ -12,6 +12,7 @@ export default function activate(api: ExtensionAPI): void {
   // 1. Registro del proveedor en Pi / Gentle Shell
   api.registerProvider(PROVIDER_ID, {
     name: PROVIDER_LABEL,
+    api: PROVIDER_API,
     models: CLAUDE_MODELS,
     streamSimple: createClaudeStream
   });

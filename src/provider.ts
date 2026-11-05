@@ -10,7 +10,7 @@ import {
 import { resolveClaudeBinary, loadConfig } from "./config.js";
 import { finalizeStream, registerSession } from "./session-lifecycle.js";
 import { recordUsageTurn } from "./quota-tracker.js";
-import { PROVIDER_ID } from "./types.js";
+import { PROVIDER_ID, PROVIDER_API } from "./types.js";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 
@@ -46,7 +46,7 @@ export function createClaudeStream(
     const assistantError: AssistantMessage = {
       role: "assistant",
       content: [{ type: "text", text: errorMsg }],
-      api: "anthropic-messages",
+      api: PROVIDER_API,
       provider: PROVIDER_ID,
       model: model.id,
       usage: EMPTY_USAGE,
@@ -110,7 +110,7 @@ export function createClaudeStream(
       const getPartialAssistant = (): AssistantMessage => ({
         role: "assistant",
         content: [{ type: "text", text: accumulatedText }],
-        api: "anthropic-messages",
+        api: PROVIDER_API,
         provider: PROVIDER_ID,
         model: model.id,
         usage: EMPTY_USAGE,
