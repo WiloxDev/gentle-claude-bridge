@@ -5,13 +5,13 @@
 # Gentle Claude Bridge
 
 [![Gentle Hub](https://img.shields.io/badge/Gentle%20Hub-Extension-F095C8?style=for-the-badge)](https://gentlemanprogramming.com/gentle-hub/)
-[![Discord](https://img.shields.io/badge/Discord-Apoyo%20y%20Soporte-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://bit.ly/48zTJUo)
+[![Discord](https://img.shields.io/badge/Discord-Feedback%20%26%20Sugerencias-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://bit.ly/48zTJUo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 [![Pi native](https://img.shields.io/badge/Pi-native-orange?style=for-the-badge)](https://pi.dev)
 
 Puente nativo para **Gentle Shell** y **Pi** que conecta con **Claude Code** (usando el Agent SDK y la CLI oficial de Anthropic). Te permite usar tus modelos favoritos de Claude con la **suscripción Pro o Max que ya pagas**, sin costos por token de API.
 
-> 💬 **Comunidad y Soporte:** `wilox2` · [Servidor de Discord Oficial](https://bit.ly/48zTJUo)
+> 💬 **Feedback & Sugerencias:** `wilox2` · [Servidor de Discord Oficial](https://bit.ly/48zTJUo)
 
 Incluye de serie telemetría de cuotas para la barra de Gentle Shell, soporte de reglas locales (`.claude/rules`, `AGENTS.md`), diagnósticos con `/claude doctor` y tolerancia a fallos.
 
