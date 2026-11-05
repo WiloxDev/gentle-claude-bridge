@@ -30,6 +30,8 @@ Incluye de serie telemetría de cuotas para la barra de Gentle Shell, soporte de
 
 ## 📦 Instalación
 
+> 🤖 **Para Instalación Asistida por AI (Claude, Pi, Cursor):** Consulta estrictamente [AI_INSTALL.md](AI_INSTALL.md). Este paquete es un **Proveedor Headless**, NO debe generar widgets en chat.
+
 ### En Gentle Shell
 ```bash
 # Vía npm (cuando esté publicado):
