@@ -33,7 +33,7 @@ export function runDoctorDiagnosis(): DoctorReport {
   if (claudeBin) {
     let versionStr = "Detectado";
     try {
-      versionStr = execSync(`"${claudeBin}" --version 2>/dev/null`, { encoding: "utf-8" }).trim();
+      versionStr = execSync(`"${claudeBin}" --version`, { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     } catch {
       // Ignorar si flag falla
     }
@@ -46,79 +46,62 @@ export function runDoctorDiagnosis(): DoctorReport {
     checks.push({
       title: "Ejecutable de Claude Code",
       ok: false,
-      details: "No se encontró el binario 'claude' en PATH",
-      suggestion: "Instala Claude Code globalmente con 'npm install -g @anthropic-ai/claude-code'."
+      details: "No encontrado en PATH ni en ubicaciones estándar (Windows/Mac/Linux)",
+      suggestion: "Instala Claude Code globalmente con 'npm install -g @anthropic-ai/claude-code' o define pathToClaudeExecutable en configuración."
     });
   }
 
-  // 3. Verificación de sesión de Claude (Login)
+  // 3. Verificación de sesión OAuth activa (~/.claude.json)
   const claudeConfigPath = join(homedir(), ".claude.json");
   if (existsSync(claudeConfigPath)) {
     try {
       const raw = readFileSync(claudeConfigPath, "utf-8");
-      const hasAuth = raw.includes("oauthAccount") || raw.includes("sessionToken") || raw.includes("primaryApiKey");
-      if (hasAuth) {
-        checks.push({
-          title: "Sesión de Claude Pro/Max",
-          ok: true,
-          details: "Credenciales activas encontradas en ~/.claude.json"
-        });
-      } else {
-        checks.push({
-          title: "Sesión de Claude Pro/Max",
-          ok: false,
-          details: "No se detectó sesión iniciada",
-          suggestion: "Ejecuta 'claude' en tu terminal y escribe '/login' para autenticar tu suscripción."
-        });
-      }
+      const parsed = JSON.parse(raw);
+      const hasAuth = !!(parsed.oauthToken || parsed.primaryApiKey || parsed.token || parsed.userID);
+      checks.push({
+        title: "Sesión OAuth / Credenciales de Claude Code",
+        ok: hasAuth,
+        details: hasAuth ? "Credenciales locales activas encontradas" : "Archivo .claude.json sin tokens activos",
+        suggestion: hasAuth ? undefined : "Ejecuta 'claude login' en tu terminal para autenticar tu cuenta Pro/Max."
+      });
     } catch {
       checks.push({
-        title: "Sesión de Claude",
+        title: "Sesión OAuth de Claude Code",
         ok: false,
-        details: "Error al leer ~/.claude.json",
-        suggestion: "Verifica permisos en tu directorio personal."
+        details: "Archivo .claude.json corrupto o ilegible",
+        suggestion: "Ejecuta 'claude login' para restaurar tu sesión."
       });
     }
   } else {
     checks.push({
-      title: "Sesión de Claude",
+      title: "Sesión OAuth de Claude Code",
       ok: false,
-      details: "No existe el archivo de configuración ~/.claude.json",
-      suggestion: "Ejecuta 'claude' y luego '/login' para iniciar sesión."
+      details: "No se encontró ~/.claude.json",
+      suggestion: "Ejecuta 'claude login' en tu terminal para iniciar sesión con tu cuenta de Anthropic."
     });
   }
 
-  // 4. Verificación de colisión de variables de entorno
-  const conflictingVars = ["ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN"].filter(
-    v => process.env[v] !== undefined && process.env[v] !== ""
-  );
-
-  if (conflictingVars.length > 0) {
-    checks.push({
-      title: "Variables de entorno ANTHROPIC_*",
-      ok: false,
-      details: `Variables activas: ${conflictingVars.join(", ")}`,
-      suggestion: "Estas variables sobreescriben tu suscripción de Claude Pro. Si experimentas errores de saldo, haz 'unset' de estas variables."
-    });
-  } else {
-    checks.push({
-      title: "Variables de entorno ANTHROPIC_*",
-      ok: true,
-      details: "Sin colisiones detectadas (utilizará tu suscripción Pro/Max nativa)"
-    });
-  }
-
-  // 5. Estado de la Cuota
-  const q = loadQuotaMetrics();
-  const resetDate = q.primaryWindow5h.resetAt ? new Date(q.primaryWindow5h.resetAt).toLocaleTimeString() : "N/A";
+  // 4. Verificación de Fallback CPAMC (Opcional)
+  const fallbackUrl = config.cliproxyapiFallbackUrl;
   checks.push({
-    title: "Cuota de Ventana 5h",
-    ok: !q.limitReached,
-    details: `${q.primaryWindow5h.usedPercent}% consumido (Se reinicia: ${resetDate})`,
-    suggestion: q.limitReached ? "Has alcanzado el límite temporal de Anthropic. Espera al reinicio." : undefined
+    title: "Fallback de Seguridad (CPAMC)",
+    ok: true,
+    details: `Configurado hacia ${fallbackUrl}`
   });
 
-  const allPassed = checks.every(c => c.ok);
+  // 5. Estado de Cuota (Ventana 5 Horas)
+  const quota = loadQuotaMetrics();
+  const resetAt = quota.primaryWindow5h.resetAt || (Date.now() + 5 * 3600 * 1000);
+  const resetsInHours = Math.max(0, (resetAt - Date.now()) / (1000 * 3600));
+  const tokensUsed = quota.primaryWindow5h.tokensUsed || 0;
+  checks.push({
+    title: "Monitor de Cuota de 5 Horas",
+    ok: true,
+    details: `${tokensUsed.toLocaleString()} tokens consumidos (${quota.primaryWindow5h.usedPercent.toFixed(1)}% de cuota, restablece en ~${resetsInHours.toFixed(1)}h)`
+  });
+
+  const allPassed = checks.filter(c => c.title !== "Fallback de Seguridad (CPAMC)").every(c => c.ok);
+
   return {
     timestamp: Date.now(),
     checks,
@@ -128,7 +111,7 @@ export function runDoctorDiagnosis(): DoctorReport {
 
 export function formatDoctorReport(report: DoctorReport): string {
   const lines: string[] = [];
-  lines.push("\n🩺 DIAGNÓSTICO DE GENTLE CLAUDE BRIDGE");
+  lines.push("\n🩺 DIAGNÓSTICO GENTLE CLAUDE BRIDGE");
   lines.push("========================================");
 
   for (const c of report.checks) {
@@ -140,6 +123,10 @@ export function formatDoctorReport(report: DoctorReport): string {
   }
 
   lines.push("========================================");
-  lines.push(report.allPassed ? "🎉 Todo en orden. Tu entorno está listo para usar Claude." : "⚠️ Se detectaron detalles que requieren tu atención.");
+  lines.push(report.allPassed 
+    ? "🎉 Todo en orden. Tu puente a Claude Code está listo para operar." 
+    : "⚠️ Se detectaron advertencias. Revisa las sugerencias arriba para solucionarlas."
+  );
+
   return lines.join("\n");
 }

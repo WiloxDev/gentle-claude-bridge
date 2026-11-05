@@ -77,28 +77,57 @@ export function saveConfig(updates: Partial<GentleClaudeConfig>): GentleClaudeCo
   return next;
 }
 
+/**
+ * Resuelve el ejecutable de Claude Code de forma agnóstica y universal:
+ * Soporta Windows nativo (where.exe + %APPDATA%), macOS Apple Silicon (/opt/homebrew),
+ * macOS Intel (/usr/local) y Linux (~/.npm-global, /usr/bin).
+ */
 export function resolveClaudeBinary(explicitPath?: string): string | null {
   if (explicitPath && existsSync(explicitPath)) {
     return explicitPath;
   }
 
+  const isWin = process.platform === "win32";
+
+  // 1. Detección en PATH dinámico según plataforma
   try {
-    const stdout = execSync("which claude 2>/dev/null || which claude-code 2>/dev/null", {
-      encoding: "utf-8"
-    }).trim();
-    if (stdout && existsSync(stdout)) {
-      return stdout;
+    const lookupCmd = isWin ? "where.exe claude.cmd claude.exe claude" : "which claude 2>/dev/null || which claude-code 2>/dev/null";
+    const stdout = execSync(lookupCmd, { encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    if (stdout) {
+      const firstLine = stdout.split(/\r?\n/)[0].trim();
+      if (existsSync(firstLine)) {
+        return firstLine;
+      }
     }
   } catch {
-    // which falló
+    // Búsqueda en PATH falló
   }
 
-  const commonPaths = [
-    join(homedir(), ".npm-global", "bin", "claude"),
-    "/usr/local/bin/claude",
-    "/usr/bin/claude",
-    join(homedir(), ".nix-profile", "bin", "claude")
-  ];
+  // 2. Matriz de rutas estándar por plataforma
+  const home = homedir();
+  const commonPaths: string[] = [];
+
+  if (isWin) {
+    const appData = process.env.APPDATA || join(home, "AppData", "Roaming");
+    const localAppData = process.env.LOCALAPPDATA || join(home, "AppData", "Local");
+    commonPaths.push(
+      join(appData, "npm", "claude.cmd"),
+      join(appData, "npm", "claude.exe"),
+      join(localAppData, "Programs", "claude", "claude.exe"),
+      join(home, ".npm-global", "claude.cmd")
+    );
+  } else {
+    // macOS Apple Silicon (Homebrew arm64)
+    commonPaths.push("/opt/homebrew/bin/claude");
+    // macOS Intel / Linux estándar
+    commonPaths.push("/usr/local/bin/claude");
+    // Linux npm global común
+    commonPaths.push(join(home, ".npm-global", "bin", "claude"));
+    // Linux distribución estándar
+    commonPaths.push("/usr/bin/claude");
+    // Nix profile
+    commonPaths.push(join(home, ".nix-profile", "bin", "claude"));
+  }
 
   for (const p of commonPaths) {
     if (existsSync(p)) {
